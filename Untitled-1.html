@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie Clicker XMAS</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+
+<style>
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    font-family:'Luckiest Guy',Arial,sans-serif;
+    color:white;
+    overflow:hidden;
+    background:
+        linear-gradient(rgba(0,0,50,0.5), rgba(0,0,50,0.5)),
+        url('weihnachtsbaum.jpg') center/cover no-repeat;
+}
+
+#main-content{text-align:center;display:none}
+#cookie{width:280px;cursor:pointer;transition:.3s}
+#cookie:hover{transform:scale(1.12)}
+
+#start-button{
+    padding:15px 30px;
+    font-size:24px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.snowflake{
+    position:fixed;
+    top:-20px;
+    color:white;
+    animation:fall linear forwards;
+    pointer-events:none;
+}
+
+/* Konfetti Styling */
+.confetti {
+    position: fixed;
+    top: -20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+    animation: fall linear forwards;
+}
+
+@keyframes fall{to{transform:translateY(110vh)}}
+
+.flying-gingerbread{
+    position: fixed;
+    top: -80px;
+    cursor: pointer;
+    z-index: 10;
+    animation: flySpin linear forwards;
+}
+
+@keyframes flySpin {
+    to {transform: translateY(110vh) rotate(720deg);}
+}
+
+.floating-point{
+    position:fixed;
+    color:gold;
+    font-size:16px;
+    font-weight:bold;
+    animation:floatUp 1s ease-out forwards;
+    pointer-events:none;
+}
+
+@keyframes floatUp{
+    to{opacity:0;transform:translateY(-100px)}
+}
+
+#combo{
+    font-size:22px;
+    color:gold;
+}
+</style>
+</head>
+
+<body>
+
+<button id="start-button">START</button>
+
+<div id="main-content">
+    <h1>X-MAS COOKIE CLICKER</h1>
+    <img id="cookie" src="lebkuchen.png" alt="Cookie">
+    <div id="cookie-count">0</div>
+    <div id="combo">COMBO x1</div>
+</div>
+
+<script>
+const startButton = document.getElementById("start-button");
+const mainContent = document.getElementById("main-content");
+const cookie = document.getElementById("cookie");
+const cookieCountDisplay = document.getElementById("cookie-count");
+const comboDisplay = document.getElementById("combo");
+
+let cookieCount = 0;
+let clickCounter = 0;
+
+let combo = 1;
+const COMBO_MAX = 9;
+
+let snowIntensity = 0;
+let snowInterval = null;
+const maxSnowflakes = 300;
+
+startButton.onclick = () => {
+    startButton.style.display = "none";
+    mainContent.style.display = "block";
+};
+
+cookie.onclick = (e) => {
+    clickCounter++;
+
+    /* 🎉 NEU: Konfetti alle 100 Klicks */
+    if (clickCounter % 100 === 0) {
+        spawnConfetti();
+    }
+
+    /* 🎯 Combo alle 30 Klicks */
+    if (clickCounter % 30 === 0 && combo < COMBO_MAX) {
+        combo++;
+        comboDisplay.textContent = `COMBO x${combo}`;
+        createFlyingGingerbread();
+    }
+
+    /* 🍪 Cookies zählen */
+    cookieCount += combo;
+    cookieCountDisplay.textContent = cookieCount;
+    createFloatingPoint(e.clientX, e.clientY, combo);
+
+    /* ❄ Schnee alle 10 Klicks */
+    if (clickCounter % 10 === 0 && snowIntensity < 10) {
+        snowIntensity++;
+        startSnow();
+    }
+};
+
+/* 🎉 Konfetti Funktion */
+function spawnConfetti() {
+    const colors = ['#ff0000', '#00ff00', '#0000ff']; // Rot, Grün, Blau
+    
+    for (let i = 0; i < 30; i++) {
+        const c = document.createElement("div");
+        c.className = "confetti";
+        
+        // Zufällige Farbe aus dem Array
+        c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Zufällige Position und Geschwindigkeit
+        c.style.left = Math.random() * 100 + "vw";
+        c.style.animationDuration = (Math.random() * 2 + 2) + "s";
+        c.style.opacity = Math.random() * 0.5 + 0.5;
+        
+        document.body.appendChild(c);
+        
+        // Entfernen, sobald es unten aus dem Bild ist
+        setTimeout(() => c.remove(), 4000);
+    }
+}
+
+/* 🍪 Flying Cookie */
+function createFlyingGingerbread() {
+    const g = document.createElement("div");
+    g.className = "flying-gingerbread";
+    g.textContent = "🍪";
+    g.style.fontSize = Math.random() * 20 + 40 + "px";
+    g.style.left = Math.random() * (innerWidth - 60) + "px";
+    g.style.animationDuration = Math.random() * 3 + 4 + "s";
+
+    let clicked = false;
+
+    g.onclick = (e) => {
+        if (clicked) return;
+        clicked = true;
+        e.stopPropagation();
+        const bonus = 50 * combo;
+        cookieCount += bonus;
+        cookieCountDisplay.textContent = cookieCount;
+        createFloatingPoint(e.clientX, e.clientY, bonus);
+        g.style.animation = "none";
+        g.remove();
+    };
+
+    document.body.appendChild(g);
+    setTimeout(() => {
+        if (g.isConnected) g.remove();
+    }, 8000);
+}
+
+/* ✨ Floating Points */
+function createFloatingPoint(x, y, value){
+    const fp = document.createElement("div");
+    fp.className = "floating-point";
+    fp.textContent = "+" + value;
+    fp.style.left = x + "px";
+    fp.style.top = y + "px";
+    document.body.appendChild(fp);
+    setTimeout(() => fp.remove(), 1000);
+}
+
+/* ❄ Schnee */
+function startSnow(){
+    if (snowInterval) return;
+    snowInterval = setInterval(() => {
+        for(let i = 0; i < snowIntensity; i++){
+            createSnowFlake();
+        }
+    }, 300);
+}
+
+function createSnowFlake() {
+    if (document.querySelectorAll('.snowflake').length >= maxSnowflakes) return;
+    const s = document.createElement("div");
+    s.className = "snowflake";
+    s.textContent = "❄";
+    s.style.left = Math.random() * innerWidth + "px";
+    s.style.fontSize = Math.random()*10+10+"px";
+    s.style.opacity = Math.random();
+    s.style.animationDuration = Math.random()*3+2+"s";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 5000);
+}
+</script>
+</body>
+</html>
